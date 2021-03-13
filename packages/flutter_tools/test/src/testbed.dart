@@ -728,6 +728,7 @@ class TestFeatureFlags implements FeatureFlags {
     this.isIOSEnabled = true,
     this.isFuchsiaEnabled = false,
     this.isExperimentalInvalidationStrategyEnabled = false,
+    this.areCustomDevicesEnabled = true
   });
 
   @override
@@ -758,6 +759,9 @@ class TestFeatureFlags implements FeatureFlags {
   final bool isExperimentalInvalidationStrategyEnabled;
 
   @override
+  final bool areCustomDevicesEnabled;
+
+  @override
   bool isEnabled(Feature feature) {
     switch (feature) {
       case flutterWebFeature:
@@ -778,6 +782,8 @@ class TestFeatureFlags implements FeatureFlags {
         return isFuchsiaEnabled;
       case experimentalInvalidationStrategy:
         return isExperimentalInvalidationStrategyEnabled;
+      case flutterCustomDevicesFeature:
+        return areCustomDevicesEnabled;
     }
     return false;
   }

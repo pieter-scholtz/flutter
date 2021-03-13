@@ -27,6 +27,8 @@ import 'base/terminal.dart';
 import 'base/user_messages.dart' hide userMessages;
 import 'base/utils.dart';
 import 'build_info.dart';
+import 'custom_devices/custom_device.dart';
+import 'custom_devices/custom_devices_config.dart';
 import 'devfs.dart';
 import 'features.dart';
 import 'fuchsia/fuchsia_device.dart';
@@ -74,6 +76,7 @@ class PlatformType {
   static const PlatformType macos = PlatformType._('macos');
   static const PlatformType windows = PlatformType._('windows');
   static const PlatformType fuchsia = PlatformType._('fuchsia');
+  static const PlatformType custom = PlatformType._('custom');
 
   final String value;
 
@@ -360,6 +363,7 @@ class FlutterDeviceManager extends DeviceManager {
     @required OperatingSystemUtils operatingSystemUtils,
     @required WindowsWorkflow windowsWorkflow,
     @required Terminal terminal,
+    @required CustomDevicesConfig customDevicesConfig,
   }) : deviceDiscoverers =  <DeviceDiscovery>[
     AndroidDevices(
       logger: logger,
@@ -422,6 +426,12 @@ class FlutterDeviceManager extends DeviceManager {
       platform: platform,
       processManager: processManager,
       logger: logger,
+    ),
+    CustomDevices(
+      featureFlags: featureFlags,
+      processManager: processManager,
+      logger: logger,
+      config: customDevicesConfig
     ),
   ], super(
       logger: logger,

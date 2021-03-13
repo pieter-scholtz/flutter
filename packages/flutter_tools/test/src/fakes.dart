@@ -7,6 +7,8 @@ import 'dart:async';
 import 'package:flutter_tools/src/base/file_system.dart';
 import 'package:flutter_tools/src/base/logger.dart';
 import 'package:flutter_tools/src/base/os.dart';
+import 'package:flutter_tools/src/build_info.dart';
+import 'package:flutter_tools/src/bundle.dart';
 import 'package:flutter_tools/src/cache.dart';
 import 'package:flutter_tools/src/device.dart';
 
@@ -62,4 +64,23 @@ class FakeDyldEnvironmentArtifact extends ArtifactSet {
   @override
   Future<void> update(ArtifactUpdater artifactUpdater, Logger logger, FileSystem fileSystem, OperatingSystemUtils operatingSystemUtils) async {
   }
+}
+
+class FakeBundleBuilder implements BundleBuilder {
+  @override
+  Future<void> build({
+    TargetPlatform platform,
+    BuildInfo buildInfo,
+    String mainPath,
+    String manifestPath = defaultManifestPath,
+    String applicationKernelFilePath,
+    String depfilePath,
+    String assetDirPath,
+    bool trackWidgetCreation = false,
+    List<String> extraFrontEndOptions = const <String>[],
+    List<String> extraGenSnapshotOptions = const <String>[],
+    List<String> fileSystemRoots,
+    String fileSystemScheme,
+    bool treeShakeIcons
+  }) => Future<void>.value();
 }

@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'package:file/memory.dart';
 import 'package:meta/meta.dart';
 
 import '../convert.dart';
@@ -27,30 +28,41 @@ class Config {
     @required FileSystem fileSystem,
     @required Logger logger,
     @required Platform platform,
+    bool deleteFileOnFormatException = true
   }) {
     final String filePath = _configPath(platform, fileSystem, name);
     final File file = fileSystem.file(filePath);
     file.parent.createSync(recursive: true);
-    return Config.createForTesting(file, logger);
+    return Config.createForTesting(file, logger, deleteFileOnFormatException: deleteFileOnFormatException);
   }
 
   /// Constructs a new [Config] object from a file called [name] in
   /// the given [Directory].
+  ///
+  /// Defaults to [BufferLogger], [MemoryFileSystem], and [name]=test.
   factory Config.test(
     String name, {
-    @required Directory directory,
-    @required Logger logger,
-  }) => Config.createForTesting(directory.childFile('.${kConfigDir}_$name'), logger);
+    Directory directory,
+    Logger logger,
+    bool deleteFileOnFormatException = true
+  }) {
+    directory ??= MemoryFileSystem.test().directory('/');
+    return Config.createForTesting(
+      directory.childFile('.${kConfigDir}_$name'),
+      logger ?? BufferLogger.test(),
+      deleteFileOnFormatException: deleteFileOnFormatException
+    );
+  }
 
   /// Test only access to the Config constructor.
   @visibleForTesting
-  Config.createForTesting(File file, Logger logger) : _file = file, _logger = logger {
+  Config.createForTesting(File file, Logger logger, {bool deleteFileOnFormatException = true}) : _file = file, _logger = logger {
     if (!_file.existsSync()) {
       return;
     }
     try {
       ErrorHandlingFileSystem.noExitOnFailure(() {
-        _values = castStringKeyedMap(json.decode(_file.readAsStringSync()));
+        _values = castStringKeyedMap(json.decode(_file.readAsStringSync())) ?? <String, dynamic>{};
       });
     } on FormatException {
       _logger
@@ -59,7 +71,10 @@ class Config {
             'You may need to reapply any previously saved configuration '
             'with the "flutter config" command.',
         );
-      _file.deleteSync();
+
+      if (deleteFileOnFormatException) {
+        _file.deleteSync();
+      }
     } on Exception catch (err) {
       _logger
         ..printError('Could not read preferences in ${file.path}.\n$err')
