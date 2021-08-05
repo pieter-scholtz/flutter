@@ -20,7 +20,10 @@ bool _listsEqual(List<dynamic>? a, List<dynamic>? b) {
     return false;
   }
 
-  return a.asMap().entries.every((MapEntry<int, dynamic> e) => e.value == b[e.key]);
+  return a
+      .asMap()
+      .entries
+      .every((MapEntry<int, dynamic> e) => e.value == b[e.key]);
 }
 
 /// The normal [RegExp.==] operator is inherited from [Object], so only
@@ -38,11 +41,11 @@ bool _regexesEqual(RegExp? a, RegExp? b) {
     return false;
   }
 
-  return a.pattern == b.pattern
-    && a.isMultiLine == b.isMultiLine
-    && a.isCaseSensitive == b.isCaseSensitive
-    && a.isUnicode == b.isUnicode
-    && a.isDotAll == b.isDotAll;
+  return a.pattern == b.pattern &&
+      a.isMultiLine == b.isMultiLine &&
+      a.isCaseSensitive == b.isCaseSensitive &&
+      a.isUnicode == b.isUnicode &&
+      a.isDotAll == b.isDotAll;
 }
 
 /// Something went wrong while trying to load the custom devices config from the
@@ -53,9 +56,8 @@ class CustomDeviceRevivalException implements Exception {
   const CustomDeviceRevivalException(this.message);
 
   const CustomDeviceRevivalException.fromDescriptions(
-    String fieldDescription,
-    String expectedValueDescription
-  ) : message = 'Expected $fieldDescription to be $expectedValueDescription.';
+      String fieldDescription, String expectedValueDescription)
+      : message = 'Expected $fieldDescription to be $expectedValueDescription.';
 
   final String message;
 
@@ -94,13 +96,14 @@ class CustomDeviceConfig {
     required this.runDebugCommand,
     this.forwardPortCommand,
     this.forwardPortSuccessRegex,
-    this.screenshotCommand
-  }) : assert(forwardPortCommand == null || forwardPortSuccessRegex != null),
-       assert(
-         platform == null
-         || platform == TargetPlatform.linux_x64
-         || platform == TargetPlatform.linux_arm64
-       );
+    this.screenshotCommand,
+    this.embedderName,
+    this.configureNativeProject,
+    this.buildNativeProject,
+  })  : assert(forwardPortCommand == null || forwardPortSuccessRegex != null),
+        assert(platform == null ||
+            platform == TargetPlatform.linux_x64 ||
+            platform == TargetPlatform.linux_arm64);
 
   /// Create a CustomDeviceConfig from some JSON value.
   /// If anything fails internally (some value doesn't have the right type,
@@ -108,103 +111,76 @@ class CustomDeviceConfig {
   /// of the error is thrown. (No exceptions/errors other than JsonRevivalException
   /// should ever be thrown by this factory.)
   factory CustomDeviceConfig.fromJson(dynamic json) {
-    final Map<String, dynamic> typedMap = _castJsonObject(
-      json,
-      'device configuration',
-      'a JSON object'
-    );
+    final Map<String, dynamic> typedMap =
+        _castJsonObject(json, 'device configuration', 'a JSON object');
 
     final List<String>? forwardPortCommand = _castStringListOrNull(
-      typedMap[_kForwardPortCommand],
-      _kForwardPortCommand,
-      'null or array of strings with at least one element',
-      minLength: 1
-    );
+        typedMap[_kForwardPortCommand],
+        _kForwardPortCommand,
+        'null or array of strings with at least one element',
+        minLength: 1);
 
     final RegExp? forwardPortSuccessRegex = _convertToRegexOrNull(
-      typedMap[_kForwardPortSuccessRegex],
-      _kForwardPortSuccessRegex,
-      'null or string-ified regex'
-    );
+        typedMap[_kForwardPortSuccessRegex],
+        _kForwardPortSuccessRegex,
+        'null or string-ified regex');
 
-    final String? archString = _castStringOrNull(
-      typedMap[_kPlatform],
-      _kPlatform,
-      'null or one of linux-arm64, linux-x64'
-    );
+    final String? archString = _castStringOrNull(typedMap[_kPlatform],
+        _kPlatform, 'null or one of linux-arm64, linux-x64');
 
     late TargetPlatform? platform;
     try {
-      platform = archString == null
-        ? null
-        : getTargetPlatformForName(archString);
+      platform =
+          archString == null ? null : getTargetPlatformForName(archString);
     } on FallThroughError {
       throw const CustomDeviceRevivalException.fromDescriptions(
-        _kPlatform,
-        'null or one of linux-arm64, linux-x64'
-      );
+          _kPlatform, 'null or one of linux-arm64, linux-x64');
     }
 
-    if (platform != null
-        && platform != TargetPlatform.linux_arm64
-        && platform != TargetPlatform.linux_x64
-    ) {
+    if (platform != null &&
+        platform != TargetPlatform.linux_arm64 &&
+        platform != TargetPlatform.linux_x64) {
       throw const CustomDeviceRevivalException.fromDescriptions(
-        _kPlatform,
-        'null or one of linux-arm64, linux-x64'
-      );
+          _kPlatform, 'null or one of linux-arm64, linux-x64');
     }
 
     if (forwardPortCommand != null && forwardPortSuccessRegex == null) {
-      throw const CustomDeviceRevivalException('When forwardPort is given, forwardPortSuccessRegex must be specified too.');
+      throw const CustomDeviceRevivalException(
+          'When forwardPort is given, forwardPortSuccessRegex must be specified too.');
     }
 
     return CustomDeviceConfig(
-      id: _castString(typedMap[_kId], _kId, 'a string'),
-      label: _castString(typedMap[_kLabel], _kLabel, 'a string'),
-      sdkNameAndVersion: _castString(typedMap[_kSdkNameAndVersion], _kSdkNameAndVersion, 'a string'),
-      platform: platform,
-      enabled: _castBool(typedMap[_kEnabled], _kEnabled, 'a boolean'),
-      pingCommand: _castStringList(
-        typedMap[_kPingCommand],
-        _kPingCommand,
-        'array of strings with at least one element',
-        minLength: 1
-      ),
-      pingSuccessRegex: _convertToRegexOrNull(typedMap[_kPingSuccessRegex], _kPingSuccessRegex, 'null or string-ified regex'),
-      postBuildCommand: _castStringListOrNull(
-        typedMap[_kPostBuildCommand],
-        _kPostBuildCommand,
-        'null or array of strings with at least one element',
-        minLength: 1,
-      ),
-      installCommand: _castStringList(
-        typedMap[_kInstallCommand],
-        _kInstallCommand,
-        'array of strings with at least one element',
-        minLength: 1
-      ),
-      uninstallCommand: _castStringList(
-        typedMap[_kUninstallCommand],
-        _kUninstallCommand,
-        'array of strings with at least one element',
-        minLength: 1
-      ),
-      runDebugCommand: _castStringList(
-        typedMap[_kRunDebugCommand],
-        _kRunDebugCommand,
-        'array of strings with at least one element',
-        minLength: 1
-      ),
-      forwardPortCommand: forwardPortCommand,
-      forwardPortSuccessRegex: forwardPortSuccessRegex,
-      screenshotCommand: _castStringListOrNull(
-        typedMap[_kScreenshotCommand],
-        _kScreenshotCommand,
-        'array of strings with at least one element',
-        minLength: 1
-      )
-    );
+        id: _castString(typedMap[_kId], _kId, 'a string'),
+        label: _castString(typedMap[_kLabel], _kLabel, 'a string'),
+        sdkNameAndVersion: _castString(
+            typedMap[_kSdkNameAndVersion], _kSdkNameAndVersion, 'a string'),
+        platform: platform,
+        enabled: _castBool(typedMap[_kEnabled], _kEnabled, 'a boolean'),
+        pingCommand: _castStringList(typedMap[_kPingCommand], _kPingCommand,
+            'array of strings with at least one element', minLength: 1),
+        pingSuccessRegex: _convertToRegexOrNull(typedMap[_kPingSuccessRegex],
+            _kPingSuccessRegex, 'null or string-ified regex'),
+        postBuildCommand: _castStringListOrNull(
+          typedMap[_kPostBuildCommand],
+          _kPostBuildCommand,
+          'null or array of strings with at least one element',
+          minLength: 1,
+        ),
+        installCommand: _castStringList(
+            typedMap[_kInstallCommand], _kInstallCommand, 'array of strings with at least one element',
+            minLength: 1),
+        uninstallCommand: _castStringList(typedMap[_kUninstallCommand],
+            _kUninstallCommand, 'array of strings with at least one element',
+            minLength: 1),
+        runDebugCommand: _castStringList(
+            typedMap[_kRunDebugCommand], _kRunDebugCommand, 'array of strings with at least one element',
+            minLength: 1),
+        forwardPortCommand: forwardPortCommand,
+        forwardPortSuccessRegex: forwardPortSuccessRegex,
+        screenshotCommand: _castStringListOrNull(typedMap[_kScreenshotCommand], _kScreenshotCommand, 'array of strings with at least one element or null', minLength: 1),
+        embedderName: _castStringOrNull(typedMap[_kEmbedderName], _kEmbedderName, 'string or null'),
+        configureNativeProject: _castStringListOrNull(typedMap[_kConfigureNativeProject], _kConfigureNativeProject, 'array of strings with at least one element or null', minLength: 1),
+        buildNativeProject: _castStringListOrNull(typedMap[_kBuildNativeProject], _kBuildNativeProject, 'array of strings with at least one element or null', minLength: 1));
   }
 
   static const String _kId = 'id';
@@ -221,71 +197,142 @@ class CustomDeviceConfig {
   static const String _kForwardPortCommand = 'forwardPort';
   static const String _kForwardPortSuccessRegex = 'forwardPortSuccessRegex';
   static const String _kScreenshotCommand = 'screenshot';
+  static const String _kEmbedderName = 'embedder';
+  static const String _kConfigureNativeProject = 'configureNativeProject';
+  static const String _kBuildNativeProject = 'buildNativeProject';
 
   /// An example device config used for creating the default config file.
   /// Uses windows-specific ping and pingSuccessRegex. For the linux and macOs
-  /// example config, see [exampleUnix].
+  /// example config, see [exampleLinux].
   static final CustomDeviceConfig exampleWindows = CustomDeviceConfig(
-    id: 'pi',
-    label: 'Raspberry Pi',
-    sdkNameAndVersion: 'Raspberry Pi 4 Model B+',
-    platform: TargetPlatform.linux_arm64,
-    enabled: false,
-    pingCommand: const <String>[
-      'ping',
-      '-w', '500',
-      '-n', '1',
-      'raspberrypi',
+      id: 'pi',
+      label: 'Raspberry Pi',
+      sdkNameAndVersion: 'Raspberry Pi 4 Model B+',
+      platform: TargetPlatform.linux_arm64,
+      enabled: false,
+      pingCommand: const <String>[
+        'ping',
+        '-w',
+        '3000',
+        '-n',
+        '1',
+        'raspberrypi',
+      ],
+      pingSuccessRegex: RegExp(r'[<=]\d+ms'),
+      postBuildCommand: null,
+      installCommand: const <String>[
+        'scp',
+        '-r',
+        '-o',
+        'BatchMode=yes',
+        r'${localPath}',
+        r'pi@raspberrypi:/tmp/${appName}',
+      ],
+      uninstallCommand: const <String>[
+        'ssh',
+        '-o',
+        'BatchMode=yes',
+        'pi@raspberrypi',
+        r'rm -rf "/tmp/${appName}"',
+      ],
+      runDebugCommand: const <String>[
+        'ssh',
+        '-o',
+        'BatchMode=yes',
+        'pi@raspberrypi',
+        r'flutter-pi "/tmp/${appName}"',
+      ],
+      forwardPortCommand: const <String>[
+        'ssh',
+        '-o',
+        'BatchMode=yes',
+        '-o',
+        'ExitOnForwardFailure=yes',
+        '-L',
+        r'127.0.0.1:${hostPort}:127.0.0.1:${devicePort}',
+        'pi@raspberrypi',
+      ],
+      forwardPortSuccessRegex: RegExp('Linux'),
+      screenshotCommand: const <String>[
+        'ssh',
+        '-o',
+        'BatchMode=yes',
+        'pi@raspberrypi',
+        r"fbgrab /tmp/screenshot.png && cat /tmp/screenshot.png | base64 | tr -d ' \n\t'",
+      ],
+      embedderName: 'sony-embedder',
+      configureNativeProject: const <String>[
+        'rmdir',
+        '/Q',
+        '/S',
+        'build',
+        '&&',
+        'mkdir',
+        'build',
+        '&&',
+        'cd',
+        'build',
+        '&&',
+        'cmake',
+        '-DCMAKE_SYSTEM_NAME=Linux',
+        '-DCMAKE_SYSTEM_PROCESSOR=arm',
+        '-DCMAKE_C_COMPILER=clang',
+        '-DCMAKE_C_COMPILER_TARGET=arm-linux-gnueabihf',
+        '-DCMAKE_C_FLAGS=-fuse-ld=lld',
+        '-DCMAKE_CXX_COMPILER=clang',
+        '-DCMAKE_CXX_COMPILER_TARGET=arm-linux-gnueabihf',
+        '-DCMAKE_CXX_FLAGS=-fuse-ld=lld',
+        '-DCMAKE_SYSROOT=C:/Users/hannes/devel/debian_sid_arm-sysroot',
+        r'-DCMAKE_BUILD_MODE=${buildType}',
+        r'-DPLUGINS=${pluginList}',
+        r'-DCMAKE_INSTALL_PREFIX=${assetBundleDirectory}',
+        '-GNinja',
+        '..'
+      ],
+      buildNativeProject: const <String>['ninja', '-C', 'build', 'install']);
+
+  /// An example device config used for creating the default config file.
+  /// Uses ping and pingSuccessRegex values that only work on linux or macOs.
+  /// For the Windows example config, see [exampleWindows].
+  static final CustomDeviceConfig exampleLinux = exampleWindows.copyWith(
+    pingCommand: const <String>['ping', '-w', '3', '-c', '1', 'raspberrypi'],
+    explicitPingSuccessRegex: true,
+    pingSuccessRegex: null,
+    configureNativeProject: const <String>[
+      'rm',
+      '-rf',
+      'build',
+      '&&',
+      'mkdir',
+      'build',
+      '&&',
+      'cd',
+      'build',
+      '&&',
+      'cmake',
+      '-DCMAKE_SYSTEM_NAME=Linux',
+      '-DCMAKE_SYSTEM_PROCESSOR=arm',
+      '-DCMAKE_C_COMPILER=clang',
+      '-DCMAKE_C_COMPILER_TARGET=arm-linux-gnueabihf',
+      '-DCMAKE_CXX_COMPILER=clang',
+      '-DCMAKE_CXX_COMPILER_TARGET=arm-linux-gnueabihf',
+      '-DCMAKE_SYSROOT=/home/hannes/devel/debian_sid_arm-sysroot',
+      r'-DCMAKE_BUILD_MODE=${buildType}',
+      r'-DPLUGINS=${pluginList}',
+      r'-DCMAKE_INSTALL_PREFIX=${assetBundleDirectory}',
+      '-GNinja',
+      '..'
     ],
-    pingSuccessRegex: RegExp(r'[<=]\d+ms'),
-    postBuildCommand: null,
-    installCommand: const <String>[
-      'scp',
-      '-r',
-      '-o', 'BatchMode=yes',
-      r'${localPath}',
-      r'pi@raspberrypi:/tmp/${appName}',
-    ],
-    uninstallCommand: const <String>[
-      'ssh',
-      '-o', 'BatchMode=yes',
-      'pi@raspberrypi',
-      r'rm -rf "/tmp/${appName}"',
-    ],
-    runDebugCommand: const <String>[
-      'ssh',
-      '-o', 'BatchMode=yes',
-      'pi@raspberrypi',
-      r'flutter-pi "/tmp/${appName}"',
-    ],
-    forwardPortCommand: const <String>[
-      'ssh',
-      '-o', 'BatchMode=yes',
-      '-o', 'ExitOnForwardFailure=yes',
-      '-L', r'127.0.0.1:${hostPort}:127.0.0.1:${devicePort}',
-      'pi@raspberrypi',
-    ],
-    forwardPortSuccessRegex: RegExp('Linux'),
-    screenshotCommand: const <String>[
-      'ssh',
-      '-o', 'BatchMode=yes',
-      'pi@raspberrypi',
-      r"fbgrab /tmp/screenshot.png && cat /tmp/screenshot.png | base64 | tr -d ' \n\t'",
-    ],
+    buildNativeProject: const <String>['ninja', '-C', 'build', 'install'],
   );
 
   /// An example device config used for creating the default config file.
   /// Uses ping and pingSuccessRegex values that only work on linux or macOs.
   /// For the Windows example config, see [exampleWindows].
-  static final CustomDeviceConfig exampleUnix = exampleWindows.copyWith(
-    pingCommand: const <String>[
-      'ping',
-      '-w', '1',
-      '-c', '1',
-      'raspberrypi'
-    ],
-    explicitPingSuccessRegex: true
-  );
+  static final CustomDeviceConfig exampleMacos = exampleLinux.copyWith(
+      pingCommand: const <String>['ping', '-c', '1', 'raspberrypi'],
+      explicitPingSuccessRegex: true,
+      pingSuccessRegex: null);
 
   /// Returns an example custom device config that works on the given host platform.
   ///
@@ -295,9 +342,10 @@ class CustomDeviceConfig {
   static CustomDeviceConfig getExampleForPlatform(Platform platform) {
     if (platform.isWindows) {
       return exampleWindows;
-    }
-    if (platform.isLinux || platform.isMacOS) {
-      return exampleUnix;
+    } else if (platform.isLinux) {
+      return exampleLinux;
+    } else if (platform.isMacOS) {
+      return exampleMacos;
     }
     throw FallThroughError();
   }
@@ -316,6 +364,9 @@ class CustomDeviceConfig {
   final List<String>? forwardPortCommand;
   final RegExp? forwardPortSuccessRegex;
   final List<String>? screenshotCommand;
+  final String? embedderName;
+  final List<String>? configureNativeProject;
+  final List<String>? buildNativeProject;
 
   /// Returns true when this custom device config uses port forwarding,
   /// which is the case when [forwardPortCommand] is not null.
@@ -325,16 +376,25 @@ class CustomDeviceConfig {
   /// which is the case when the [screenshotCommand] is not null.
   bool get supportsScreenshotting => screenshotCommand != null;
 
+  /// Returns true when this custom device config supports plugins,
+  /// which is the case when it has an [embedderName] and either the
+  /// [configureNativeProject] or [buildNativeProject] is not null.
+  bool get supportsPlugins =>
+      embedderName != null &&
+      (configureNativeProject != null || buildNativeProject != null);
+
   /// Invokes and returns the result of [closure].
   ///
   /// If anything at all is thrown when executing the closure, a
   /// [CustomDeviceRevivalException] is thrown with the given [fieldDescription] and
   /// [expectedValueDescription].
-  static T _maybeRethrowAsRevivalException<T>(T Function() closure, String fieldDescription, String expectedValueDescription) {
+  static T _maybeRethrowAsRevivalException<T>(T Function() closure,
+      String fieldDescription, String expectedValueDescription) {
     try {
       return closure();
     } on Object {
-      throw CustomDeviceRevivalException.fromDescriptions(fieldDescription, expectedValueDescription);
+      throw CustomDeviceRevivalException.fromDescriptions(
+          fieldDescription, expectedValueDescription);
     }
   }
 
@@ -342,9 +402,11 @@ class CustomDeviceConfig {
   ///
   /// If the value is null or not a valid string-keyed map, a [CustomDeviceRevivalException]
   /// with the given [fieldDescription] and [expectedValueDescription] is thrown.
-  static Map<String, dynamic> _castJsonObject(dynamic value, String fieldDescription, String expectedValueDescription) {
+  static Map<String, dynamic> _castJsonObject(
+      dynamic value, String fieldDescription, String expectedValueDescription) {
     if (value == null) {
-      throw CustomDeviceRevivalException.fromDescriptions(fieldDescription, expectedValueDescription);
+      throw CustomDeviceRevivalException.fromDescriptions(
+          fieldDescription, expectedValueDescription);
     }
 
     return _maybeRethrowAsRevivalException(
@@ -358,9 +420,11 @@ class CustomDeviceConfig {
   ///
   /// If the value is null or not a bool, a [CustomDeviceRevivalException] with the given
   /// [fieldDescription] and [expectedValueDescription] is thrown.
-  static bool _castBool(dynamic value, String fieldDescription, String expectedValueDescription) {
+  static bool _castBool(
+      dynamic value, String fieldDescription, String expectedValueDescription) {
     if (value == null) {
-      throw CustomDeviceRevivalException.fromDescriptions(fieldDescription, expectedValueDescription);
+      throw CustomDeviceRevivalException.fromDescriptions(
+          fieldDescription, expectedValueDescription);
     }
 
     return _maybeRethrowAsRevivalException(
@@ -374,9 +438,11 @@ class CustomDeviceConfig {
   ///
   /// If the value is null or not a String, a [CustomDeviceRevivalException] with the given
   /// [fieldDescription] and [expectedValueDescription] is thrown.
-  static String _castString(dynamic value, String fieldDescription, String expectedValueDescription) {
+  static String _castString(
+      dynamic value, String fieldDescription, String expectedValueDescription) {
     if (value == null) {
-      throw CustomDeviceRevivalException.fromDescriptions(fieldDescription, expectedValueDescription);
+      throw CustomDeviceRevivalException.fromDescriptions(
+          fieldDescription, expectedValueDescription);
     }
 
     return _maybeRethrowAsRevivalException(
@@ -390,7 +456,8 @@ class CustomDeviceConfig {
   ///
   /// If the value not null and not a String, a [CustomDeviceRevivalException] with the given
   /// [fieldDescription] and [expectedValueDescription] is thrown.
-  static String? _castStringOrNull(dynamic value, String fieldDescription, String expectedValueDescription) {
+  static String? _castStringOrNull(
+      dynamic value, String fieldDescription, String expectedValueDescription) {
     if (value == null) {
       return null;
     }
@@ -410,7 +477,8 @@ class CustomDeviceConfig {
     int minLength = 0,
   }) {
     if (value == null) {
-      throw CustomDeviceRevivalException.fromDescriptions(fieldDescription, expectedValueDescription);
+      throw CustomDeviceRevivalException.fromDescriptions(
+          fieldDescription, expectedValueDescription);
     }
 
     final List<String> list = _maybeRethrowAsRevivalException(
@@ -420,7 +488,8 @@ class CustomDeviceConfig {
     );
 
     if (list.length < minLength) {
-      throw CustomDeviceRevivalException.fromDescriptions(fieldDescription, expectedValueDescription);
+      throw CustomDeviceRevivalException.fromDescriptions(
+          fieldDescription, expectedValueDescription);
     }
 
     return list;
@@ -442,7 +511,8 @@ class CustomDeviceConfig {
       return null;
     }
 
-    return _castStringList(value, fieldDescription, expectedValueDescription, minLength: minLength);
+    return _castStringList(value, fieldDescription, expectedValueDescription,
+        minLength: minLength);
   }
 
   /// Tries to construct a RegExp from [value], or returns null if [value]
@@ -451,7 +521,8 @@ class CustomDeviceConfig {
   /// If the value is not null and not a valid string-ified regex,
   /// a [CustomDeviceRevivalException] with the given [fieldDescription] and
   /// [expectedValueDescription] is thrown.
-  static RegExp? _convertToRegexOrNull(dynamic value, String fieldDescription, String expectedValueDescription) {
+  static RegExp? _convertToRegexOrNull(
+      dynamic value, String fieldDescription, String expectedValueDescription) {
     if (value == null) {
       return null;
     }
@@ -479,102 +550,137 @@ class CustomDeviceConfig {
       _kForwardPortCommand: forwardPortCommand,
       _kForwardPortSuccessRegex: forwardPortSuccessRegex?.pattern,
       _kScreenshotCommand: screenshotCommand,
+      _kEmbedderName: embedderName,
+      _kConfigureNativeProject: configureNativeProject,
+      _kBuildNativeProject: buildNativeProject
     };
   }
 
-  CustomDeviceConfig copyWith({
-    String? id,
-    String? label,
-    String? sdkNameAndVersion,
-    bool explicitPlatform = false,
-    TargetPlatform? platform,
-    bool? enabled,
-    List<String>? pingCommand,
-    bool explicitPingSuccessRegex = false,
-    RegExp? pingSuccessRegex,
-    bool explicitPostBuildCommand = false,
-    List<String>? postBuildCommand,
-    List<String>? installCommand,
-    List<String>? uninstallCommand,
-    List<String>? runDebugCommand,
-    bool explicitForwardPortCommand = false,
-    List<String>? forwardPortCommand,
-    bool explicitForwardPortSuccessRegex = false,
-    RegExp? forwardPortSuccessRegex,
-    bool explicitScreenshotCommand = false,
-    List<String>? screenshotCommand
-  }) {
+  CustomDeviceConfig copyWith(
+      {String? id,
+      String? label,
+      String? sdkNameAndVersion,
+      bool explicitPlatform = false,
+      TargetPlatform? platform,
+      bool? enabled,
+      List<String>? pingCommand,
+      bool explicitPingSuccessRegex = false,
+      RegExp? pingSuccessRegex,
+      bool explicitPostBuildCommand = false,
+      List<String>? postBuildCommand,
+      List<String>? installCommand,
+      List<String>? uninstallCommand,
+      List<String>? runDebugCommand,
+      bool explicitForwardPortCommand = false,
+      List<String>? forwardPortCommand,
+      bool explicitForwardPortSuccessRegex = false,
+      RegExp? forwardPortSuccessRegex,
+      bool explicitScreenshotCommand = false,
+      List<String>? screenshotCommand,
+      bool explicitEmbedderName = false,
+      String? embedderName,
+      bool explicitConfigureNativeProject = false,
+      List<String>? configureNativeProject,
+      bool explicitBuildNativeProject = false,
+      List<String>? buildNativeProject}) {
     return CustomDeviceConfig(
-      id: id ?? this.id,
-      label: label ?? this.label,
-      sdkNameAndVersion: sdkNameAndVersion ?? this.sdkNameAndVersion,
-      platform: explicitPlatform ? platform : (platform ?? this.platform),
-      enabled: enabled ?? this.enabled,
-      pingCommand: pingCommand ?? this.pingCommand,
-      pingSuccessRegex: explicitPingSuccessRegex ? pingSuccessRegex : (pingSuccessRegex ?? this.pingSuccessRegex),
-      postBuildCommand: explicitPostBuildCommand ? postBuildCommand : (postBuildCommand ?? this.postBuildCommand),
-      installCommand: installCommand ?? this.installCommand,
-      uninstallCommand: uninstallCommand ?? this.uninstallCommand,
-      runDebugCommand: runDebugCommand ?? this.runDebugCommand,
-      forwardPortCommand: explicitForwardPortCommand ? forwardPortCommand : (forwardPortCommand ?? this.forwardPortCommand),
-      forwardPortSuccessRegex: explicitForwardPortSuccessRegex ? forwardPortSuccessRegex : (forwardPortSuccessRegex ?? this.forwardPortSuccessRegex),
-      screenshotCommand: explicitScreenshotCommand ? screenshotCommand : (screenshotCommand ?? this.screenshotCommand),
-    );
+        id: id ?? this.id,
+        label: label ?? this.label,
+        sdkNameAndVersion: sdkNameAndVersion ?? this.sdkNameAndVersion,
+        platform: explicitPlatform ? platform : (platform ?? this.platform),
+        enabled: enabled ?? this.enabled,
+        pingCommand: pingCommand ?? this.pingCommand,
+        pingSuccessRegex: explicitPingSuccessRegex
+            ? pingSuccessRegex
+            : (pingSuccessRegex ?? this.pingSuccessRegex),
+        postBuildCommand: explicitPostBuildCommand
+            ? postBuildCommand
+            : (postBuildCommand ?? this.postBuildCommand),
+        installCommand: installCommand ?? this.installCommand,
+        uninstallCommand: uninstallCommand ?? this.uninstallCommand,
+        runDebugCommand: runDebugCommand ?? this.runDebugCommand,
+        forwardPortCommand: explicitForwardPortCommand
+            ? forwardPortCommand
+            : (forwardPortCommand ?? this.forwardPortCommand),
+        forwardPortSuccessRegex: explicitForwardPortSuccessRegex
+            ? forwardPortSuccessRegex
+            : (forwardPortSuccessRegex ?? this.forwardPortSuccessRegex),
+        screenshotCommand: explicitScreenshotCommand
+            ? screenshotCommand
+            : (screenshotCommand ?? this.screenshotCommand),
+        embedderName: explicitEmbedderName
+            ? embedderName
+            : (embedderName ?? this.embedderName),
+        configureNativeProject: explicitConfigureNativeProject
+            ? configureNativeProject
+            : (configureNativeProject ?? this.configureNativeProject),
+        buildNativeProject: explicitBuildNativeProject
+            ? buildNativeProject
+            : (buildNativeProject ?? this.buildNativeProject));
   }
 
   @override
   bool operator ==(Object other) {
-    return other is CustomDeviceConfig
-      && other.id == id
-      && other.label == label
-      && other.sdkNameAndVersion == sdkNameAndVersion
-      && other.platform == platform
-      && other.enabled == enabled
-      && _listsEqual(other.pingCommand, pingCommand)
-      && _regexesEqual(other.pingSuccessRegex, pingSuccessRegex)
-      && _listsEqual(other.postBuildCommand, postBuildCommand)
-      && _listsEqual(other.installCommand, installCommand)
-      && _listsEqual(other.uninstallCommand, uninstallCommand)
-      && _listsEqual(other.runDebugCommand, runDebugCommand)
-      && _listsEqual(other.forwardPortCommand, forwardPortCommand)
-      && _regexesEqual(other.forwardPortSuccessRegex, forwardPortSuccessRegex)
-      && _listsEqual(other.screenshotCommand, screenshotCommand);
+    return other is CustomDeviceConfig &&
+        other.id == id &&
+        other.label == label &&
+        other.sdkNameAndVersion == sdkNameAndVersion &&
+        other.platform == platform &&
+        other.enabled == enabled &&
+        _listsEqual(other.pingCommand, pingCommand) &&
+        _regexesEqual(other.pingSuccessRegex, pingSuccessRegex) &&
+        _listsEqual(other.postBuildCommand, postBuildCommand) &&
+        _listsEqual(other.installCommand, installCommand) &&
+        _listsEqual(other.uninstallCommand, uninstallCommand) &&
+        _listsEqual(other.runDebugCommand, runDebugCommand) &&
+        _listsEqual(other.forwardPortCommand, forwardPortCommand) &&
+        _regexesEqual(other.forwardPortSuccessRegex, forwardPortSuccessRegex) &&
+        _listsEqual(other.screenshotCommand, screenshotCommand) &&
+        other.embedderName == embedderName &&
+        _listsEqual(other.configureNativeProject, configureNativeProject) &&
+        _listsEqual(other.buildNativeProject, buildNativeProject);
   }
 
   @override
   int get hashCode {
-    return id.hashCode
-      ^ label.hashCode
-      ^ sdkNameAndVersion.hashCode
-      ^ platform.hashCode
-      ^ enabled.hashCode
-      ^ pingCommand.hashCode
-      ^ (pingSuccessRegex?.pattern).hashCode
-      ^ postBuildCommand.hashCode
-      ^ installCommand.hashCode
-      ^ uninstallCommand.hashCode
-      ^ runDebugCommand.hashCode
-      ^ forwardPortCommand.hashCode
-      ^ (forwardPortSuccessRegex?.pattern).hashCode
-      ^ screenshotCommand.hashCode;
+    return id.hashCode ^
+        label.hashCode ^
+        sdkNameAndVersion.hashCode ^
+        platform.hashCode ^
+        enabled.hashCode ^
+        pingCommand.hashCode ^
+        (pingSuccessRegex?.pattern).hashCode ^
+        postBuildCommand.hashCode ^
+        installCommand.hashCode ^
+        uninstallCommand.hashCode ^
+        runDebugCommand.hashCode ^
+        forwardPortCommand.hashCode ^
+        (forwardPortSuccessRegex?.pattern).hashCode ^
+        screenshotCommand.hashCode ^
+        embedderName.hashCode ^
+        configureNativeProject.hashCode ^
+        buildNativeProject.hashCode;
   }
 
   @override
   String toString() {
     return 'CustomDeviceConfig('
-      'id: $id, '
-      'label: $label, '
-      'sdkNameAndVersion: $sdkNameAndVersion, '
-      'platform: $platform, '
-      'enabled: $enabled, '
-      'pingCommand: $pingCommand, '
-      'pingSuccessRegex: $pingSuccessRegex, '
-      'postBuildCommand: $postBuildCommand, '
-      'installCommand: $installCommand, '
-      'uninstallCommand: $uninstallCommand, '
-      'runDebugCommand: $runDebugCommand, '
-      'forwardPortCommand: $forwardPortCommand, '
-      'forwardPortSuccessRegex: $forwardPortSuccessRegex, '
-      'screenshotCommand: $screenshotCommand)';
+        'id: $id, '
+        'label: $label, '
+        'sdkNameAndVersion: $sdkNameAndVersion, '
+        'platform: $platform, '
+        'enabled: $enabled, '
+        'pingCommand: $pingCommand, '
+        'pingSuccessRegex: $pingSuccessRegex, '
+        'postBuildCommand: $postBuildCommand, '
+        'installCommand: $installCommand, '
+        'uninstallCommand: $uninstallCommand, '
+        'runDebugCommand: $runDebugCommand, '
+        'forwardPortCommand: $forwardPortCommand, '
+        'forwardPortSuccessRegex: $forwardPortSuccessRegex, '
+        'screenshotCommand: $screenshotCommand, '
+        'embedderName: $embedderName, '
+        'configurePluginsCommand: $configureNativeProject, '
+        'buildPluginsCommand: $buildNativeProject)';
   }
 }

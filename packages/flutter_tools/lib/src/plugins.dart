@@ -18,13 +18,13 @@ class Plugin {
     required this.dependencies,
     required this.isDirectDependency,
     this.implementsPackage,
-  }) : assert(name != null),
-       assert(path != null),
-       assert(platforms != null),
-       assert(defaultPackagePlatforms != null),
-       assert(pluginDartClassPlatforms != null),
-       assert(dependencies != null),
-       assert(isDirectDependency != null);
+  })  : assert(name != null),
+        assert(path != null),
+        assert(platforms != null),
+        assert(defaultPackagePlatforms != null),
+        assert(pluginDartClassPlatforms != null),
+        assert(dependencies != null),
+        assert(isDirectDependency != null);
 
   /// Parses [Plugin] specification from the provided pluginYaml.
   ///
@@ -64,7 +64,8 @@ class Plugin {
   }) {
     final List<String> errors = validatePluginYaml(pluginYaml);
     if (errors.isNotEmpty) {
-      throwToolExit('Invalid plugin specification $name.\n${errors.join('\n')}');
+      throwToolExit(
+          'Invalid plugin specification $name.\n${errors.join('\n')}');
     }
     if (pluginYaml != null && pluginYaml['platforms'] != null) {
       return Plugin._fromMultiPlatformYaml(
@@ -94,15 +95,17 @@ class Plugin {
     FileSystem fileSystem,
     bool isDirectDependency,
   ) {
-    assert (pluginYaml['platforms'] != null, 'Invalid multi-platform plugin specification $name.');
+    assert(pluginYaml['platforms'] != null,
+        'Invalid multi-platform plugin specification $name.');
     final YamlMap platformsYaml = pluginYaml['platforms'] as YamlMap;
 
-    assert (_validateMultiPlatformYaml(platformsYaml).isEmpty,
-            'Invalid multi-platform plugin specification $name.');
+    assert(_validateMultiPlatformYaml(platformsYaml).isEmpty,
+        'Invalid multi-platform plugin specification $name.');
 
     final Map<String, PluginPlatform> platforms = <String, PluginPlatform>{};
 
-    if (_providesImplementationForPlatform(platformsYaml, AndroidPlugin.kConfigKey)) {
+    if (_providesImplementationForPlatform(
+        platformsYaml, AndroidPlugin.kConfigKey)) {
       platforms[AndroidPlugin.kConfigKey] = AndroidPlugin.fromYaml(
         name,
         platformsYaml[AndroidPlugin.kConfigKey] as YamlMap,
@@ -111,29 +114,34 @@ class Plugin {
       );
     }
 
-    if (_providesImplementationForPlatform(platformsYaml, IOSPlugin.kConfigKey)) {
-      platforms[IOSPlugin.kConfigKey] =
-          IOSPlugin.fromYaml(name, platformsYaml[IOSPlugin.kConfigKey] as YamlMap);
+    if (_providesImplementationForPlatform(
+        platformsYaml, IOSPlugin.kConfigKey)) {
+      platforms[IOSPlugin.kConfigKey] = IOSPlugin.fromYaml(
+          name, platformsYaml[IOSPlugin.kConfigKey] as YamlMap);
     }
 
-    if (_providesImplementationForPlatform(platformsYaml, LinuxPlugin.kConfigKey)) {
-      platforms[LinuxPlugin.kConfigKey] =
-          LinuxPlugin.fromYaml(name, platformsYaml[LinuxPlugin.kConfigKey] as YamlMap);
+    if (_providesImplementationForPlatform(
+        platformsYaml, LinuxPlugin.kConfigKey)) {
+      platforms[LinuxPlugin.kConfigKey] = LinuxPlugin.fromYaml(
+          name, platformsYaml[LinuxPlugin.kConfigKey] as YamlMap);
     }
 
-    if (_providesImplementationForPlatform(platformsYaml, MacOSPlugin.kConfigKey)) {
-      platforms[MacOSPlugin.kConfigKey] =
-          MacOSPlugin.fromYaml(name, platformsYaml[MacOSPlugin.kConfigKey] as YamlMap);
+    if (_providesImplementationForPlatform(
+        platformsYaml, MacOSPlugin.kConfigKey)) {
+      platforms[MacOSPlugin.kConfigKey] = MacOSPlugin.fromYaml(
+          name, platformsYaml[MacOSPlugin.kConfigKey] as YamlMap);
     }
 
-    if (_providesImplementationForPlatform(platformsYaml, WebPlugin.kConfigKey)) {
-      platforms[WebPlugin.kConfigKey] =
-          WebPlugin.fromYaml(name, platformsYaml[WebPlugin.kConfigKey] as YamlMap);
+    if (_providesImplementationForPlatform(
+        platformsYaml, WebPlugin.kConfigKey)) {
+      platforms[WebPlugin.kConfigKey] = WebPlugin.fromYaml(
+          name, platformsYaml[WebPlugin.kConfigKey] as YamlMap);
     }
 
-    if (_providesImplementationForPlatform(platformsYaml, WindowsPlugin.kConfigKey)) {
-      platforms[WindowsPlugin.kConfigKey] =
-          WindowsPlugin.fromYaml(name, platformsYaml[WindowsPlugin.kConfigKey] as YamlMap);
+    if (_providesImplementationForPlatform(
+        platformsYaml, WindowsPlugin.kConfigKey)) {
+      platforms[WindowsPlugin.kConfigKey] = WindowsPlugin.fromYaml(
+          name, platformsYaml[WindowsPlugin.kConfigKey] as YamlMap);
     }
 
     // TODO(stuartmorgan): Consider merging web into this common handling; the
@@ -149,14 +157,51 @@ class Plugin {
     final Map<String, String> defaultPackages = <String, String>{};
     final Map<String, String> dartPluginClasses = <String, String>{};
     for (final String platform in sharedHandlingPlatforms) {
-        final String? defaultPackage = _getDefaultPackageForPlatform(platformsYaml, platform);
-        if (defaultPackage != null) {
-          defaultPackages[platform] = defaultPackage;
-        }
-        final String? dartClass = _getPluginDartClassForPlatform(platformsYaml, platform);
-        if (dartClass != null) {
-          dartPluginClasses[platform] = dartClass;
-        }
+      final String? defaultPackage =
+          _getDefaultPackageForPlatform(platformsYaml, platform);
+      if (defaultPackage != null) {
+        defaultPackages[platform] = defaultPackage;
+      }
+      final String? dartClass =
+          _getPluginDartClassForPlatform(platformsYaml, platform);
+      if (dartClass != null) {
+        dartPluginClasses[platform] = dartClass;
+      }
+    }
+
+    // We assume any platform name starting with a `x-` is a custom embedder.
+    final List<String> customEmbedderNames = platformsYaml.keys
+        .whereType<String>()
+        .where((String s) => s.startsWith('x-'))
+        .map((String s) => s.substring(2))
+        .toList();
+    final Map<String, String> customEmbedderDefaultPackages =
+        <String, String>{};
+    final Map<String, String> customEmbedderPluginDartClasses =
+        <String, String>{};
+
+    for (final String embedderName in customEmbedderNames) {
+      if (_providesImplementationForPlatform(
+          platformsYaml, 'x-$embedderName')) {
+        platforms['x-$embedderName'] = CustomEmbedderPlugin.fromYaml(
+            embedderName: embedderName,
+            name: name,
+            yaml: platformsYaml['x-$embedderName'] as YamlMap,
+            pluginPath: path,
+            fileSystem: fileSystem);
+      }
+
+      final String? defaultPackage =
+          _getDefaultPackageForPlatform(platformsYaml, 'x-$embedderName');
+      if (defaultPackage != null) {
+        customEmbedderDefaultPackages['x-$embedderName'] = defaultPackage;
+      }
+
+      final String? pluginDartClass =
+          _getPluginDartClassForPlatform(platformsYaml, 'x-$embedderName');
+      if (pluginDartClass != null) {
+        customEmbedderPluginDartClasses['x-$embedderName'] = pluginDartClass;
+      }
     }
 
     return Plugin(
@@ -167,7 +212,9 @@ class Plugin {
       pluginDartClassPlatforms: dartPluginClasses,
       dependencies: dependencies,
       isDirectDependency: isDirectDependency,
-      implementsPackage: pluginYaml['implements'] != null ? pluginYaml['implements'] as String : '',
+      implementsPackage: pluginYaml['implements'] != null
+          ? pluginYaml['implements'] as String
+          : '',
     );
   }
 
@@ -180,7 +227,8 @@ class Plugin {
     bool isDirectDependency,
   ) {
     final Map<String, PluginPlatform> platforms = <String, PluginPlatform>{};
-    final String pluginClass = (pluginYaml as Map<dynamic, dynamic>)['pluginClass'] as String;
+    final String pluginClass =
+        (pluginYaml as Map<dynamic, dynamic>)['pluginClass'] as String;
     if (pluginYaml != null && pluginClass != null) {
       final String androidPackage = pluginYaml['androidPackage'] as String;
       if (androidPackage != null) {
@@ -194,12 +242,11 @@ class Plugin {
       }
 
       final String iosPrefix = pluginYaml['iosPrefix'] as String? ?? '';
-      platforms[IOSPlugin.kConfigKey] =
-          IOSPlugin(
-            name: name,
-            classPrefix: iosPrefix,
-            pluginClass: pluginClass,
-          );
+      platforms[IOSPlugin.kConfigKey] = IOSPlugin(
+        name: name,
+        classPrefix: iosPrefix,
+        pluginClass: pluginClass,
+      );
     }
     return Plugin(
       name: name,
@@ -221,13 +268,20 @@ class Plugin {
   ///       pluginClass: SamplePlugin
   ///     ios:
   ///       pluginClass: SamplePlugin
-  static YamlMap createPlatformsYamlMap(List<String> platforms, String pluginClass, String androidPackage) {
+  static YamlMap createPlatformsYamlMap(
+      List<String> platforms, String pluginClass, String androidPackage,
+      [List<String> emptyPlatforms = const <String>[]]) {
     final Map<String, dynamic> map = <String, dynamic>{};
     for (final String platform in platforms) {
       map[platform] = <String, String>{
         'pluginClass': pluginClass,
-        ...platform == 'android' ? <String, String>{'package': androidPackage} : <String, String>{},
+        ...platform == 'android'
+            ? <String, String>{'package': androidPackage}
+            : <String, String>{},
       };
+    }
+    for (final String platform in emptyPlatforms) {
+      map[platform] = <String, String>{};
     }
     return YamlMap.wrap(map);
   }
@@ -263,7 +317,8 @@ class Plugin {
 
     if (usesNewPluginFormat) {
       if (yaml['platforms'] != null && yaml['platforms'] is! YamlMap) {
-        const String errorMessage = 'flutter.plugin.platforms should be a map with the platform name as the key';
+        const String errorMessage =
+            'flutter.plugin.platforms should be a map with the platform name as the key';
         return <String>[errorMessage];
       }
       return _validateMultiPlatformYaml(yaml['platforms'] as YamlMap?);
@@ -306,6 +361,14 @@ class Plugin {
     if (isInvalid(WindowsPlugin.kConfigKey, WindowsPlugin.validate)) {
       errors.add('Invalid "windows" plugin specification.');
     }
+    for (final String configKey in yaml.keys
+        .whereType<String>()
+        .where((String s) => s.startsWith('x-'))) {
+      if (isInvalid(configKey, CustomEmbedderPlugin.validate)) {
+        errors.add('Invalid "$configKey" plugin specification.');
+      }
+    }
+
     return errors;
   }
 
@@ -334,7 +397,8 @@ class Plugin {
     return false;
   }
 
-  static String? _getDefaultPackageForPlatform(YamlMap platformsYaml, String platformKey) {
+  static String? _getDefaultPackageForPlatform(
+      YamlMap platformsYaml, String platformKey) {
     if (!_supportsPlatform(platformsYaml, platformKey)) {
       return null;
     }
@@ -344,17 +408,20 @@ class Plugin {
     return null;
   }
 
-  static String? _getPluginDartClassForPlatform(YamlMap platformsYaml, String platformKey) {
+  static String? _getPluginDartClassForPlatform(
+      YamlMap platformsYaml, String platformKey) {
     if (!_supportsPlatform(platformsYaml, platformKey)) {
       return null;
     }
     if ((platformsYaml[platformKey] as YamlMap).containsKey(kDartPluginClass)) {
-      return (platformsYaml[platformKey] as YamlMap)[kDartPluginClass] as String;
+      return (platformsYaml[platformKey] as YamlMap)[kDartPluginClass]
+          as String;
     }
     return null;
   }
 
-  static bool _providesImplementationForPlatform(YamlMap platformsYaml, String platformKey) {
+  static bool _providesImplementationForPlatform(
+      YamlMap platformsYaml, String platformKey) {
     if (!_supportsPlatform(platformsYaml, platformKey)) {
       return false;
     }
@@ -392,20 +459,25 @@ class Plugin {
 class PluginInterfaceResolution {
   PluginInterfaceResolution({
     required this.plugin,
-    required this.platform,
-  }) : assert(plugin != null),
-       assert(platform != null);
+    required this.platformKey,
+  })  : assert(plugin != null),
+        assert(platformKey != null);
 
   /// The plugin.
   final Plugin plugin;
-  // The name of the platform that this plugin implements.
-  final String platform;
+
+  /// The platform config key for the platform that this plugin implements.
+  /// For example, `linux` or `x-custom-embedder`.
+  final String platformKey;
+
+  /// The platform that this plugin implements.
+  PluginPlatform get platform => plugin.platforms[platformKey]!;
 
   Map<String, String> toMap() {
-    return <String, String> {
+    return <String, String>{
       'pluginName': plugin.name,
-      'platform': platform,
-      'dartClass': plugin.pluginDartClassPlatforms[platform] ?? '',
+      'platform': platformKey,
+      'dartClass': plugin.pluginDartClassPlatforms[platformKey] ?? '',
     };
   }
 }

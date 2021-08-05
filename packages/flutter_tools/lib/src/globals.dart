@@ -254,6 +254,8 @@ FlutterProjectFactory get projectFactory {
   return context.get<FlutterProjectFactory>() ?? FlutterProjectFactory(
     logger: logger,
     fileSystem: fs,
+    featureFlags: featureFlags,
+    customDevicesConfig: customDevicesConfig
   );
 }
 

@@ -44,6 +44,8 @@ class FakeFlutterProjectFactory extends FlutterProjectFactory {
     super(
       fileSystem: globals.fs,
       logger: globals.logger,
+      featureFlags: featureFlags,
+      customDevicesConfig: globals.customDevicesConfig
     );
 
   final Directory directoryOverride;

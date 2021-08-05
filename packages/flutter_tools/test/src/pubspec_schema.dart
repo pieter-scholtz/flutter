@@ -13,6 +13,7 @@ void validatePubspecForPlugin({
   required String projectDir,
   required String pluginClass,
   required List<String> expectedPlatforms,
+  List<String> expectedEmptyPlatforms = const <String>[],
   List<String> unexpectedPlatforms = const <String>[],
   String? androidIdentifier,
   String? webFileName,
@@ -30,6 +31,10 @@ void validatePubspecForPlugin({
     if (platform == 'web') {
       expect(platformMap['fileName'], webFileName);
     }
+  }
+  for (final String platform in expectedEmptyPlatforms) {
+    expect(platformMaps[platform], isNotNull);
+    expect(platformMaps[platform], isEmpty);
   }
   for (final String platform in unexpectedPlatforms) {
     expect(platformMaps[platform], isNull);
