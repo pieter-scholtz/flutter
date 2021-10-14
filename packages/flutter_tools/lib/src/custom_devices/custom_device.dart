@@ -6,6 +6,8 @@
 
 import 'dart:async';
 
+import 'package:flutter_tools/src/build_system/build_system.dart';
+import 'package:flutter_tools/src/build_system/targets/custom_devices.dart';
 import 'package:meta/meta.dart';
 import 'package:process/process.dart';
 
@@ -19,10 +21,12 @@ import '../base/utils.dart';
 import '../build_info.dart';
 import '../bundle.dart';
 import '../bundle_builder.dart';
+import '../cache.dart';
 import '../convert.dart';
 import '../device.dart';
 import '../device_port_forwarder.dart';
 import '../features.dart';
+import '../globals_null_migrated.dart' as globals;
 import '../project.dart';
 import '../protocol_discovery.dart';
 import 'custom_device_config.dart';
@@ -763,6 +767,35 @@ class CustomDevice extends Device {
       final String assetBundleDir = getAssetBuildDirectory();
 
       bundleBuilder ??= BundleBuilder();
+
+      final FlutterProject project = FlutterProject.current();
+
+      await globals.buildSystem.build(
+        const DebugCustomDevicesAssets(TargetPlatform.linux_arm64),
+        Environment(
+          projectDir: project.directory,
+          outputDir: globals.fs.directory(assetBundleDir),
+          buildDir: project.dartTool.childDirectory('flutter_build'),
+          cacheDir: globals.cache.getRoot(),
+          flutterRootDir: globals.fs.directory(Cache.flutterRoot),
+          engineVersion: globals.artifacts.isLocalEngine
+              ? null
+              : globals.flutterVersion.engineRevision,
+          defines: <String, String>{
+            // used by the KernelSnapshot target
+            kTargetPlatform: getNameForTargetPlatform(TargetPlatform.linux_arm64),
+            kTargetFile: mainPath,
+            kDeferredComponents: 'false',
+            ...debuggingOptions.buildInfo.toBuildSystemEnvironment(),
+          },
+          artifacts: globals.artifacts,
+          fileSystem: globals.fs,
+          logger: globals.logger,
+          processManager: globals.processManager,
+          platform: globals.platform,
+          generateDartPluginRegistry: true,
+        )
+      );
 
       // this just builds the asset bundle, it's the same as `flutter build bundle`
       await bundleBuilder.build(
