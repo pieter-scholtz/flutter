@@ -68,7 +68,7 @@ void main() {
             mode: FileMode.writeOnlyAppend);
         pluginDirectory.childFile('pubspec.yaml')
           ..createSync(recursive: true)
-          ..writeAsStringSync(pluginYamlTemplate.replaceAll('PLUGIN_CLASS', toTitleCase(camelCase(name))));
+          ..writeAsStringSync(pluginYamlTemplate.replaceAll('PLUGIN_CLASS', sentenceCase(camelCase(name))));
         pluginDirectory.childDirectory('x-testembedder').createSync(recursive: true);
 
         directories.add(pluginDirectory);

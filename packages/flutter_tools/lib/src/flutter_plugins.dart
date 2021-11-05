@@ -1309,6 +1309,7 @@ Future<void> generateMainDartWithPluginRegistrant(
     packageConfig.packageOf(mainFile.absolute.uri),
     Cache.flutterRoot!,
   );
+  final File newMainDart = rootProject.dartPluginRegistrant;
   if (resolutions.isEmpty) {
     try {
       if (newMainDart.existsSync()) {

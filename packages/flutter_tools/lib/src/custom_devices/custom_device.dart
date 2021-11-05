@@ -22,7 +22,7 @@ import '../device.dart';
 import '../device_port_forwarder.dart';
 import '../features.dart';
 import '../flutter_plugins.dart';
-import '../globals_null_migrated.dart';
+import '../globals.dart' as globals;
 import '../project.dart';
 import '../protocol_discovery.dart';
 import 'custom_device_config.dart';
@@ -869,7 +869,7 @@ class CustomDevice extends Device {
             buildType: debuggingOptions.buildInfo.isDebug ? 'debug' :
               debuggingOptions.buildInfo.isProfile ? 'profile' :
               'release',
-            assetBundleDir: fs.directory(assetBundleDir),
+            assetBundleDir: globals.fs.directory(assetBundleDir),
             plugins: pluginNames
           );
           if (!ok) {
@@ -881,7 +881,7 @@ class CustomDevice extends Device {
             buildType: debuggingOptions.buildInfo.isDebug ? 'debug' :
               debuggingOptions.buildInfo.isProfile ? 'profile' :
               'release',
-            assetBundleDir: fs.directory(assetBundleDir),
+            assetBundleDir: globals.fs.directory(assetBundleDir),
             plugins: pluginNames
           );
           if (!ok) {
