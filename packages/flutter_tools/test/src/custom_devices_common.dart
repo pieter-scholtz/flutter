@@ -100,5 +100,3 @@ typedef BundleBuildFunction = Future<void> Function({
   String? assetDirPath,
   @visibleForTesting BuildSystem? buildSystem
 });
-
-

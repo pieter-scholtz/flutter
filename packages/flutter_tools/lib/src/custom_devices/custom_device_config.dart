@@ -296,8 +296,7 @@ class CustomDeviceConfig {
   /// For the Windows example config, see [exampleWindows].
   static final CustomDeviceConfig exampleLinux = exampleWindows.copyWith(
     pingCommand: const <String>['ping', '-w', '3', '-c', '1', 'raspberrypi'],
-    explicitPingSuccessRegex: true,
-    pingSuccessRegex: null,
+    explicitPingSuccessRegex: true, // overwrite pingSuccessRegex with null
     configureNativeProject: const <String>[
       'rm',
       '-rf',
@@ -330,9 +329,9 @@ class CustomDeviceConfig {
   /// Uses ping and pingSuccessRegex values that only work on linux or macOs.
   /// For the Windows example config, see [exampleWindows].
   static final CustomDeviceConfig exampleMacos = exampleLinux.copyWith(
-      pingCommand: const <String>['ping', '-c', '1', 'raspberrypi'],
-      explicitPingSuccessRegex: true,
-      pingSuccessRegex: null);
+    pingCommand: const <String>['ping', '-c', '1', 'raspberrypi'],
+    explicitPingSuccessRegex: true, // overwrite pingSuccessRegex with null
+  );
 
   /// Returns an example custom device config that works on the given host platform.
   ///

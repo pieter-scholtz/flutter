@@ -1353,7 +1353,7 @@ flutter:
         customEmbedderProject.exists = true;
         createFakePlugin(fs);
         // refreshPluginsList should call createPluginSymlinks.
-        await refreshPluginsList(flutterProject, featureFlagsOverride: TestFeatureFlags(areCustomDevicesEnabled: false));
+        await refreshPluginsList(flutterProject, featureFlagsOverride: TestFeatureFlags());
 
         expect(customEmbedderProject.pluginSymlinkDirectory.childLink('some_plugin').existsSync(), false);
       }, overrides: <Type, Generator>{
