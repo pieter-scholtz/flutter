@@ -662,14 +662,14 @@ class CustomDevice extends Device {
   }
 
   Future<bool> tryConfigureNativeProject({
-    @required String buildType,
-    @required List<String> plugins,
-    @required Directory assetBundleDir,
-    Duration timeout,
+    required String buildType,
+    required List<String> plugins,
+    required Directory assetBundleDir,
+    Duration? timeout,
     Map<String, String> additionalReplacementValues = const <String, String>{}
   }) async {
     final List<String> interpolated = interpolateCommand(
-      _config.configureNativeProject,
+      _config.configureNativeProject!,
       <String, String>{
         'buildType': buildType,
         'pluginList': plugins.join(';'),
@@ -697,14 +697,14 @@ class CustomDevice extends Device {
   }
 
   Future<bool> tryBuildNativeProject({
-    @required String buildType,
-    @required List<String> plugins,
-    @required Directory assetBundleDir,
-    Duration timeout,
+    required String buildType,
+    required List<String> plugins,
+    required Directory assetBundleDir,
+    Duration? timeout,
     Map<String, String> additionalReplacementValues = const <String, String>{}
   }) async {
     final List<String> interpolated = interpolateCommand(
-      _config.buildNativeProject,
+      _config.buildNativeProject!,
       <String, String>{
         'buildType': buildType,
         'pluginList': plugins.join(';'),
@@ -859,9 +859,9 @@ class CustomDevice extends Device {
 
         await refreshPluginsList(project.project);
 
-        final List<Map<String, Object>> plugins = await findNativeCustomEmbedderPlugins('x-${_config.embedderName}');
+        final List<Map<String, Object?>> plugins = await findNativeCustomEmbedderPlugins('x-${_config.embedderName}');
         final List<String> pluginNames = plugins
-          .map<String>((Map<String, Object> pluginInfo) => pluginInfo['name'] as String)
+          .map<String>((Map<String, Object?> pluginInfo) => pluginInfo['name']! as String)
           .toList();
 
         if (_config.configureNativeProject != null) {
@@ -897,7 +897,7 @@ class CustomDevice extends Device {
           throw ToolExit('Could not start app, name for $package is unknown.');
         }
         final bool ok = await _tryPostBuild(
-          appName: package.name,
+          appName: packageName,
           localPath: assetBundleDir,
         );
         if (!ok) {
