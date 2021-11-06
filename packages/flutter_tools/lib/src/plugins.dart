@@ -102,6 +102,15 @@ class Plugin {
     assert(_validateMultiPlatformYaml(platformsYaml).isEmpty,
         'Invalid multi-platform plugin specification $name.');
 
+    // We assume any platform name starting with a `x-` is a custom embedder.
+    final List<String> customEmbedderPlatformKeys = platformsYaml.keys
+        .whereType<String>()
+        .where((String s) => s.startsWith('x-'))
+        .toList();
+
+    final List<String> customEmbedderNames =
+        customEmbedderPlatformKeys.map((String s) => s.substring(2)).toList();
+
     final Map<String, PluginPlatform> platforms = <String, PluginPlatform>{};
 
     if (_providesImplementationForPlatform(
@@ -144,6 +153,19 @@ class Plugin {
           name, platformsYaml[WindowsPlugin.kConfigKey] as YamlMap);
     }
 
+    for (final String embedderName in customEmbedderNames) {
+      final String platformKey = 'x-$embedderName';
+      if (_providesImplementationForPlatform(platformsYaml, platformKey)) {
+        platforms[platformKey] = CustomEmbedderPlugin.fromYaml(
+          embedderName: embedderName,
+          name: name,
+          yaml: platformsYaml[platformKey] as YamlMap,
+          pluginPath: path,
+          fileSystem: fileSystem,
+        );
+      }
+    }
+
     // TODO(stuartmorgan): Consider merging web into this common handling; the
     // fact that its implementation of Dart-only plugins and default packages
     // are separate is legacy.
@@ -153,6 +175,7 @@ class Plugin {
       LinuxPlugin.kConfigKey,
       MacOSPlugin.kConfigKey,
       WindowsPlugin.kConfigKey,
+      ...customEmbedderPlatformKeys
     ];
     final Map<String, String> defaultPackages = <String, String>{};
     final Map<String, String> dartPluginClasses = <String, String>{};
@@ -166,41 +189,6 @@ class Plugin {
           _getPluginDartClassForPlatform(platformsYaml, platform);
       if (dartClass != null) {
         dartPluginClasses[platform] = dartClass;
-      }
-    }
-
-    // We assume any platform name starting with a `x-` is a custom embedder.
-    final List<String> customEmbedderNames = platformsYaml.keys
-        .whereType<String>()
-        .where((String s) => s.startsWith('x-'))
-        .map((String s) => s.substring(2))
-        .toList();
-    final Map<String, String> customEmbedderDefaultPackages =
-        <String, String>{};
-    final Map<String, String> customEmbedderPluginDartClasses =
-        <String, String>{};
-
-    for (final String embedderName in customEmbedderNames) {
-      if (_providesImplementationForPlatform(
-          platformsYaml, 'x-$embedderName')) {
-        platforms['x-$embedderName'] = CustomEmbedderPlugin.fromYaml(
-            embedderName: embedderName,
-            name: name,
-            yaml: platformsYaml['x-$embedderName'] as YamlMap,
-            pluginPath: path,
-            fileSystem: fileSystem);
-      }
-
-      final String? defaultPackage =
-          _getDefaultPackageForPlatform(platformsYaml, 'x-$embedderName');
-      if (defaultPackage != null) {
-        customEmbedderDefaultPackages['x-$embedderName'] = defaultPackage;
-      }
-
-      final String? pluginDartClass =
-          _getPluginDartClassForPlatform(platformsYaml, 'x-$embedderName');
-      if (pluginDartClass != null) {
-        customEmbedderPluginDartClasses['x-$embedderName'] = pluginDartClass;
       }
     }
 

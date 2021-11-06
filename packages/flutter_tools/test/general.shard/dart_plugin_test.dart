@@ -630,10 +630,10 @@ void main() {
           '\n'
           "import 'package:app/main.dart' as entrypoint;\n"
           "import 'dart:io'; // flutter_ignore: dart_io_import.\n"
+          "import 'package:awesome_macos/awesome_macos.dart';\n"
           "import 'package:url_launcher_android/url_launcher_android.dart';\n"
           "import 'package:url_launcher_ios/url_launcher_ios.dart';\n"
           "import 'package:url_launcher_linux/url_launcher_linux.dart';\n"
-          "import 'package:awesome_macos/awesome_macos.dart';\n"
           "import 'package:url_launcher_macos/url_launcher_macos.dart';\n"
           "import 'package:url_launcher_windows/url_launcher_windows.dart';\n"
           '\n'
@@ -839,10 +839,9 @@ void dreamWithFlags() => run(interactive: false);
           '\n'
           "import 'package:app/main.dart' as entrypoint;\n"
           "import 'dart:io'; // flutter_ignore: dart_io_import.\n"
+          "import 'package:awesome_macos/awesome_macos.dart';\n"
           "import 'package:url_launcher_android/url_launcher_android.dart';\n"
           "import 'package:url_launcher_ios/url_launcher_ios.dart';\n"
-          "import 'package:url_launcher_linux/url_launcher_linux.dart';\n"
-          "import 'package:awesome_macos/awesome_macos.dart';\n"
           "import 'package:url_launcher_linux/url_launcher_linux.dart';\n"
           "import 'package:url_launcher_macos/url_launcher_macos.dart';\n"
           "import 'package:url_launcher_testembedder/url_launcher_testembedder.dart';\n"
